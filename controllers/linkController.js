@@ -17,16 +17,46 @@ const LinkController = {
             const link = await linkModel.findById(req.params.id)
             if (!link)
                 res.status(400).json({ message: 'Link not found' })
-            link.clicks.push({ipAddress:req.ip})
+            link.clicks.push({ ipAddress: req.ip })
 
             await link.save()
-            
+
             res.redirect(link.originUrl)
         }
         catch (e) {
             res.status(400).json({ message: e.message })
         }
     },
+
+
+    getClicksState: async (req, res) => {
+        try {
+            const link = await linkModel.findById(req.params.id)
+            if (!link)
+                res.status(400).json({ message: 'Link not found' })
+            link.clicks.push({ ipAddress: req.ip })
+
+            const targetValueMap = link.targetValues.reduce((acc, target) => {
+                acc[target.value] = target.name;
+                return acc;
+            }, {})
+
+            const clickData = link.clicks.reduce((acc, click) => {
+                const targetValue = click.targetParamValue || 'unknown';
+                const targetName = targetValueMap[targetValue] || 'unknown';
+                acc[targetName] = (acc[targetName] || 0) + 1;
+                return acc;
+            }, {})
+
+            res.json(clickData);
+
+        }
+        catch (e) {
+            console.log("Server error:", e)
+            res.status(500).send('Server error')
+        }
+    },
+
 
     add: async (req, res) => {
         const { originUrl, userId } = req.body
